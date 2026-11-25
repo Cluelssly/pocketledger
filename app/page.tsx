@@ -1,69 +1,70 @@
-import Image from "next/image";
+import Link from "next/link";
+import Navbar from "./components/Navbar";
+import FeatureCard from "./components/FeatureCard";
+import "./home.css";
+
+const features = [
+  { icon: "💸", title: "Track every peso", text: "Log income and expenses in seconds with categories, dates and notes." },
+  { icon: "🎯", title: "Budgets that warn you", text: "Set monthly limits per category. Bars turn amber at 80% and red when you go over." },
+  { icon: "📊", title: "Clear reports", text: "See where your money goes and compare income vs expenses over six months." },
+  { icon: "📅", title: "Month by month", text: "Switch months with one click to review any period of your spending." },
+  { icon: "⬇️", title: "Export & backup", text: "Download your data as CSV or JSON, and restore it any time." },
+  { icon: "🔒", title: "Private by design", text: "Everything stays in your browser. No account, no server, no tracking." },
+];
+
+const steps = [
+  { n: "1", title: "Add a transaction", text: "Enter the amount, pick a category and save." },
+  { n: "2", title: "Set your budgets", text: "Choose a monthly limit for the categories you care about." },
+  { n: "3", title: "Review your month", text: "Check the overview and reports to see how you did." },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <>
+      <Navbar />
+      <div className="home">
+        <section id="top" className="home-hero">
+          <div className="home-hero-text">
+            <span className="home-pill">Free · No sign-up · Works offline</span>
+            <h1>Know where your money goes.</h1>
+            <p>
+              PocketLedger is a simple personal expense and budget tracker. Record
+              spending, set monthly limits and see clear reports, all in your browser.
+            </p>
+            <div className="home-actions">
+              <Link href="/pocket" className="home-btn">Open PocketLedger</Link>
+              <a href="#features" className="home-btn ghost">See features</a>
+            </div>
+          </div>
+        </section>
+
+        <section id="features" className="home-section">
+          <h2>Everything you need, nothing you don&apos;t</h2>
+          <div className="home-grid">
+            {features.map((f) => (
+              <FeatureCard key={f.title} icon={f.icon} title={f.title} text={f.text} />
+            ))}
+          </div>
+        </section>
+
+        <section id="how" className="home-section alt">
+          <h2>How it works</h2>
+          <div className="home-steps">
+            {steps.map((s) => (
+              <div className="home-step" key={s.n}>
+                <span className="home-num">{s.n}</span>
+                <h3>{s.title}</h3>
+                <p>{s.text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <footer className="home-footer">
+          <span>💰 PocketLedger</span>
+          <span>Simple budgeting, right in your browser.</span>
+        </footer>
+      </div>
+    </>
   );
 }

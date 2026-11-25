@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PocketLedger</title>
+<style>
+:root{--bg:#eef3f4;--card:#fff;--text:#1b2b30;--muted:#6f8288;--line:#dce5e7;--brand:#0f766e;--inc:#16a34a;--exp:#e11d48;--warn:#f59e0b}
+body.dark{--bg:#0e1517;--card:#162024;--text:#e6f0f2;--muted:#8ea3a9;--line:#24343a}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+h2{margin:0 0 14px;font-size:1.05rem}
+.top{display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:var(--brand);color:#fff;padding:12px 22px;position:sticky;top:0;z-index:10}
+.logo{font-weight:800;font-size:1.2rem}
+nav{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+nav a{color:#d6f3ef;text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:500}
+nav a:hover{background:rgba(255,255,255,.12)}
+nav a.active{background:#fff;color:var(--brand);font-weight:700}
+.month{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.18);border-radius:10px;padding:4px 8px}
+.month button{background:none;border:0;color:#fff;font-size:1.3rem;cursor:pointer;padding:0 6px}
+#monthLabel{min-width:120px;text-align:center;font-weight:600}
+main{max-width:980px;margin:0 auto;padding:24px 18px 50px}
+.view{display:none;animation:in .25s}.view.active{display:block}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.stat span{color:var(--muted);font-size:.85rem}
+.stat b{display:block;font-size:1.6rem;margin-top:4px}
+.pos{color:var(--inc)}.neg{color:var(--exp)}
+input,select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+input:focus,select:focus{outline:2px solid var(--brand);border-color:transparent}
+.form{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.form input[placeholder^="Note"]{flex:1;min-width:140px}
+.primary{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer}
+.primary:hover{filter:brightness(1.1)}
+.ghost{background:none;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:9px 14px;font:inherit;cursor:pointer}
+.ghost:hover{background:var(--bg)}.red{color:var(--exp)}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--bg);color:var(--text);padding:10px 14px;font:inherit;cursor:pointer}
+.seg button.on[data-type=expense]{background:var(--exp);color:#fff}
+.seg button.on[data-type=income]{background:var(--inc);color:#fff}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.toolbar input{flex:1;min-width:160px}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.list li:last-child{border:0}
+.ico{width:38px;height:38px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.info{flex:1;min-width:0}.info b{display:block}.info small{color:var(--muted)}
+.amt{font-weight:700;white-space:nowrap}
+.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:1.05rem}.x:hover{color:var(--exp)}
+.empty{color:var(--muted);padding:10px 0}
+.more{display:inline-block;margin-top:10px;color:var(--brand);font-weight:600;text-decoration:none}
+.bud{margin-bottom:16px}
+.bud .row{display:flex;justify-content:space-between;margin-bottom:6px;gap:8px}
+.track{height:10px;background:var(--bg);border-radius:99px;overflow:hidden}
+.fill{height:100%;background:var(--brand);border-radius:99px;transition:width .4s}
+.fill.warn{background:var(--warn)}.fill.over{background:var(--exp)}
+.bud .x{margin-left:6px}
+.cbar{margin-bottom:12px}.cbar .row{display:flex;justify-content:space-between;font-size:.92rem;margin-bottom:4px}
+.trend{display:flex;align-items:flex-end;gap:10px;height:200px}
+.tcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:.75rem;color:var(--muted)}
+.pair{display:flex;align-items:flex-end;gap:3px;height:160px;width:100%;justify-content:center}
+.pair div{width:40%;max-width:20px;border-radius:5px 5px 0 0;min-height:2px;transition:height .4s}
+.pair .i{background:var(--inc)}.pair .e{background:var(--exp)}
+.legend{font-size:.85rem;color:var(--muted);margin-bottom:6px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 10px}.dot.inc{background:var(--inc);margin-left:0}.dot.exp{background:var(--exp)}
+.settings label{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.settings label:last-child{border:0}
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,90px);background:var(--text);color:var(--bg);padding:11px 20px;border-radius:12px;transition:transform .3s;z-index:30}
+.toast.show{transform:translate(-50%,0)}
+@media(max-width:640px){.top{padding:10px 12px}nav{order:3;width:100%;flex:none}}
+
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">💰 PocketLedger</div>
+  <nav id="nav">
+    <a href="#overview" data-view="overview">Overview</a>
+    <a href="#transactions" data-view="transactions">Transactions</a>
+    <a href="#budgets" data-view="budgets">Budgets</a>
+    <a href="#reports" data-view="reports">Reports</a>
+    <a href="#settings" data-view="settings">Settings</a>
+  </nav>
+  <div class="month">
+    <button id="prevM" aria-label="Previous month">‹</button>
+    <span id="monthLabel"></span>
+    <button id="nextM" aria-label="Next month">›</button>
+  </div>
+</header>
+
+<main>
+  <!-- OVERVIEW -->
+  <section id="view-overview" class="view">
+    <div class="stats" id="ovStats"></div>
+    <div class="two">
+      <div class="card">
+        <h2>Recent transactions</h2>
+        <ul id="ovRecent" class="list"></ul>
+        <a class="more" href="#transactions">See all →</a>
+      </div>
+      <div class="card">
+        <h2>Budget watch</h2>
+        <div id="ovBudgets"></div>
+        <a class="more" href="#budgets">Manage budgets →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRANSACTIONS -->
+  <section id="view-transactions" class="view">
+    <form id="txForm" class="card form">
+      <div class="seg" id="typeSeg">
+        <button type="button" class="on" data-type="expense">Expense</button>
+        <button type="button" data-type="income">Income</button>
+      </div>
+      <input id="txAmount" type="number" min="0.01" step="0.01" placeholder="Amount" required>
+      <select id="txCat"></select>
+      <input id="txDate" type="date" required>
+      <input id="txNote" placeholder="Note (optional)">
+      <button class="primary">Add</button>
+    </form>
+    <div class="card">
+      <div class="toolbar">
+        <input id="txSearch" placeholder="Search notes / category…">
+        <select id="txFilter">
+          <option value="all">All</option>
+          <option value="expense">Expenses</option>
+          <option value="income">Income</option>
+        </select>
+        <button class="ghost" id="csvBtn">⬇ Export CSV</button>
+      </div>
+      <ul id="txList" class="list"></ul>
+    </div>
+  </section>
+
+  <!-- BUDGETS -->
+  <section id="view-budgets" class="view">
+    <form id="budgetForm" class="card form">
+      <select id="bCat"></select>
+      <input id="bLimit" type="number" min="1" step="0.01" placeholder="Monthly limit" required>
+      <button class="primary">Set budget</button>
+    </form>
+    <div class="card"><h2>This month's budgets</h2><div id="budgetList"></div></div>
+  </section>
+
+  <!-- REPORTS -->
+  <section id="view-reports" class="view">
+    <div class="two">
+      <div class="card"><h2>Spending by category</h2><div id="catBars"></div></div>
+      <div class="card"><h2>Last 6 months</h2>
+        <div class="legend"><i class="dot inc"></i>Income <i class="dot exp"></i>Expenses</div>
+        <div class="trend" id="trend"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view">
+    <div class="card settings">
+      <label>Currency
+        <select id="currencySel">
+          <option value="PHP">PHP – Philippine Peso</option>
+          <option value="USD">USD – US Dollar</option>
+          <option value="SGD">SGD – Singapore Dollar</option>
+          <option value="EUR">EUR – Euro</option>
+          <option value="JPY">JPY – Japanese Yen</option>
+        </select>
+      </label>
+      <label>Theme <button class="ghost" id="themeBtn">Toggle dark mode</button></label>
+      <label>Backup <button class="ghost" id="exportBtn">Export JSON</button></label>
+      <label>Restore <input type="file" id="importFile" accept=".json"></label>
+      <label>Danger zone <button class="ghost red" id="resetBtn">Delete all data</button></label>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast"></div>
+<script>
+(() => {
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+  const CATS = {
+    expense: { Food: '🍜', Transport: '🚌', Bills: '💡', Shopping: '🛍️', Health: '💊', Fun: '🎮', Other: '📦' },
+    income: { Salary: '💼', Allowance: '🎒', Business: '🏪', Gift: '🎁', Other: '➕' }
+  };
+  const icon = (type, cat) => CATS[type][cat] || '📦';
+
+  /* ---------- state ---------- */
+  const KEY = 'pocketledger-v1';
+  let state = { tx: [], budgets: {}, currency: 'PHP', theme: 'light' };
+  try { Object.assign(state, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+  const money = n => new Intl.NumberFormat(undefined, { style: 'currency', currency: state.currency, maximumFractionDigits: state.currency === 'JPY' ? 0 : 2 }).format(n);
+
+  let month = new Date().toISOString().slice(0, 7); // YYYY-MM
+  let txType = 'expense';
+  const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+  const monthTx = m => state.tx.filter(t => t.date.startsWith(m));
+  const sum = (list, type) => list.filter(t => t.type === type).reduce((a, t) => a + t.amount, 0);
+  const shiftMonth = (m, n) => { const [y, mo] = m.split('-').map(Number); const d = new Date(y, mo - 1 + n, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
+  const monthName = (m, short) => { const [y, mo] = m.split('-').map(Number); return new Date(y, mo - 1, 1).toLocaleDateString(undefined, short ? { month: 'short' } : { month: 'long', year: 'numeric' }); };
+
+  function toast(msg) {
+    const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  /* ---------- routing ---------- */
+  const views = $$('.view');
+  function route() {
+    const name = (location.hash || '#overview').slice(1);
+    const v = views.some(x => x.id === 'view-' + name) ? name : 'overview';
+    views.forEach(x => x.classList.toggle('active', x.id === 'view-' + v));
+    $$('#nav a').forEach(a => a.classList.toggle('active', a.dataset.view === v));
+    $('#monthLabel').textContent = monthName(month);
+    ({ overview: renderOverview, transactions: renderTx, budgets: renderBudgets, reports: renderReports, settings: () => {} })[v]();
+  }
+  window.addEventListener('hashchange', route);
+  $('#prevM').onclick = () => { month = shiftMonth(month, -1); route(); };
+  $('#nextM').onclick = () => { month = shiftMonth(month, 1); route(); };
+
+  /* ---------- overview ---------- */
+  function txRow(t, deletable) {
+    return `<li data-id="${t.id}"><div class="ico">${icon(t.type, t.cat)}</div>
+      <div class="info"><b>${esc(t.note || t.cat)}</b><small>${esc(t.cat)} · ${t.date}</small></div>
+      <span class="amt ${t.type === 'income' ? 'pos' : 'neg'}">${t.type === 'income' ? '+' : '−'}${money(t.amount)}</span>
+      ${deletable ? '<button class="x" title="Delete">✕</button>' : ''}</li>`;
+  }
+  function budgetBar(cat, limit, spent, deletable) {
+    const pct = Math.min(100, spent / limit * 100);
+    const cls = spent > limit ? 'over' : pct >= 80 ? 'warn' : '';
+    return `<div class="bud"><div class="row"><span>${icon('expense', cat)} <b>${esc(cat)}</b></span>
+      <span>${money(spent)} / ${money(limit)}${deletable ? `<button class="x" data-cat="${esc(cat)}" title="Remove">✕</button>` : ''}</span></div>
+      <div class="track"><div class="fill ${cls}" style="width:${pct}%"></div></div>
+      ${spent > limit ? `<small class="neg">Over by ${money(spent - limit)}</small>` : ''}</div>`;
+  }
+  function spentBy(cat, m = month) { return monthTx(m).filter(t => t.type === 'expense' && t.cat === cat).reduce((a, t) => a + t.amount, 0); }
+
+  function renderOverview() {
+    const list = monthTx(month), inc = sum(list, 'income'), exp = sum(list, 'expense');
+    const all = sum(state.tx, 'income') - sum(state.tx, 'expense');
+    $('#ovStats').innerHTML = `
+      <div class="stat"><span>Total balance</span><b class="${all < 0 ? 'neg' : ''}">${money(all)}</b></div>
+      <div class="stat"><span>Income this month</span><b class="pos">${money(inc)}</b></div>
+      <div class="stat"><span>Spent this month</span><b class="neg">${money(exp)}</b></div>
+      <div class="stat"><span>Saved this month</span><b class="${inc - exp < 0 ? 'neg' : 'pos'}">${money(inc - exp)}</b></div>`;
+    const recent = [...list].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)).slice(0, 5);
+    $('#ovRecent').innerHTML = recent.length ? recent.map(t => txRow(t, false)).join('') : '<li class="empty">No transactions this month.</li>';
+    const b = Object.entries(state.budgets);
+    $('#ovBudgets').innerHTML = b.length ? b.map(([c, l]) => budgetBar(c, l, spentBy(c), false)).join('') : '<p class="empty">No budgets set yet.</p>';
+  }
+
+  /* ---------- transactions ---------- */
+  function fillCats(sel, type) { sel.innerHTML = Object.keys(CATS[type]).map(c => `<option>${c}</option>`).join(''); }
+  $$('#typeSeg button').forEach(b => b.onclick = () => {
+    txType = b.dataset.type; $$('#typeSeg button').forEach(x => x.classList.toggle('on', x === b)); fillCats($('#txCat'), txType);
+  });
+  $('#txForm').onsubmit = e => {
+    e.preventDefault();
+    state.tx.push({ id: uid(), type: txType, amount: +$('#txAmount').value, cat: $('#txCat').value, date: $('#txDate').value, note: $('#txNote').value.trim() });
+    const d = $('#txDate').value; e.target.reset(); $('#txDate').value = d; fillCats($('#txCat'), txType);
+    save(); if (d.slice(0, 7) !== month) month = d.slice(0, 7);
+    route(); toast('Transaction added');
+  };
+  function filteredTx() {
+    const q = $('#txSearch').value.toLowerCase(), f = $('#txFilter').value;
+    return monthTx(month).filter(t => (f === 'all' || t.type === f) && (t.note + ' ' + t.cat).toLowerCase().includes(q))
+      .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  }
+  function renderTx() {
+    const l = filteredTx();
+    $('#txList').innerHTML = l.length ? l.map(t => txRow(t, true)).join('') : '<li class="empty">Nothing found for this month.</li>';
+  }
+  $('#txSearch').oninput = renderTx; $('#txFilter').onchange = renderTx;
+  $('#txList').onclick = e => {
+    if (!e.target.classList.contains('x')) return;
+    const id = e.target.closest('li').dataset.id; state.tx = state.tx.filter(t => t.id !== id); save(); renderTx(); toast('Deleted');
+  };
+  $('#csvBtn').onclick = () => {
+    const l = filteredTx(); if (!l.length) return toast('Nothing to export');
+    const rows = [['Date', 'Type', 'Category', 'Amount', 'Note'], ...l.map(t => [t.date, t.type, t.cat, t.amount, '"' + t.note.replace(/"/g, '""') + '"'])];
+    download('pocketledger-' + month + '.csv', rows.map(r => r.join(',')).join('\n'), 'text/csv');
+  };
+  function download(name, text, type) {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  /* ---------- budgets ---------- */
+  $('#budgetForm').onsubmit = e => {
+    e.preventDefault(); state.budgets[$('#bCat').value] = +$('#bLimit').value; $('#bLimit').value = ''; save(); renderBudgets(); toast('Budget saved');
+  };
+  function renderBudgets() {
+    const b = Object.entries(state.budgets);
+    $('#budgetList').innerHTML = b.length ? b.map(([c, l]) => budgetBar(c, l, spentBy(c), true)).join('') : '<p class="empty">Set a monthly limit above to start tracking.</p>';
+  }
+  $('#budgetList').onclick = e => {
+    if (e.target.dataset.cat) { delete state.budgets[e.target.dataset.cat]; save(); renderBudgets(); }
+  };
+
+  /* ---------- reports ---------- */
+  function renderReports() {
+    const exp = monthTx(month).filter(t => t.type === 'expense'), total = sum(exp, 'expense');
+    const by = {}; exp.forEach(t => by[t.cat] = (by[t.cat] || 0) + t.amount);
+    const rows = Object.entries(by).sort((a, b) => b[1] - a[1]);
+    $('#catBars').innerHTML = rows.length ? rows.map(([c, v]) =>
+      `<div class="cbar"><div class="row"><span>${icon('expense', c)} ${esc(c)}</span><span>${money(v)} · ${Math.round(v / total * 100)}%</span></div>
+       <div class="track"><div class="fill" style="width:${v / total * 100}%"></div></div></div>`).join('') : '<p class="empty">No spending this month.</p>';
+    const months = [...Array(6)].map((_, i) => shiftMonth(month, i - 5));
+    const data = months.map(m => [sum(monthTx(m), 'income'), sum(monthTx(m), 'expense')]);
+    const max = Math.max(...data.flat(), 1);
+    $('#trend').innerHTML = months.map((m, i) => `<div class="tcol"><div class="pair">
+      <div class="i" style="height:${data[i][0] / max * 100}%" title="Income ${money(data[i][0])}"></div>
+      <div class="e" style="height:${data[i][1] / max * 100}%" title="Expenses ${money(data[i][1])}"></div></div>${monthName(m, true)}</div>`).join('');
+  }
+
+  /* ---------- settings ---------- */
+  function applyTheme() { document.body.classList.toggle('dark', state.theme === 'dark'); }
+  $('#currencySel').onchange = e => { state.currency = e.target.value; save(); toast('Currency updated'); };
+  $('#themeBtn').onclick = () => { state.theme = state.theme === 'dark' ? 'light' : 'dark'; applyTheme(); save(); };
+  $('#exportBtn').onclick = () => download('pocketledger-backup.json', JSON.stringify(state, null, 2), 'application/json');
+  $('#importFile').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const d = JSON.parse(r.result);
+        if (!Array.isArray(d.tx)) throw 0;
+        state = Object.assign({ tx: [], budgets: {}, currency: 'PHP', theme: 'light' }, d); save(); applyTheme();
+        $('#currencySel').value = state.currency; toast('Backup restored'); route();
+      } catch (err) { toast('Invalid backup file'); }
+    };
+    r.readAsText(f); e.target.value = '';
+  };
+  $('#resetBtn').onclick = () => {
+    if (confirm('Delete ALL transactions and budgets?')) { state.tx = []; state.budgets = {}; save(); toast('All data deleted'); route(); }
+  };
+
+  /* ---------- init ---------- */
+  fillCats($('#txCat'), 'expense'); fillCats($('#bCat'), 'expense');
+  $('#txDate').value = today(); $('#currencySel').value = state.currency;
+  applyTheme(); route();
+})();
+
+</script>
+</body>
+</html>
